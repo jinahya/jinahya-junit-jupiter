@@ -1,8 +1,14 @@
 package com.github.jinahya.junit.jupiter.params.provider;
 
+import com.github.jinahya.junit.jupiter.api.JinahyaNamedUtils;
 import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public final class JinahyaArgumentsUtils {
 
@@ -30,6 +36,48 @@ public final class JinahyaArgumentsUtils {
             index += other.get().length;
         }
         return Arguments.of(arguments);
+    }
+
+    /**
+     * Returns a stream of specified arguments' values.
+     *
+     * @param arguments the arguments.
+     * @return a stream of {@code arguments}' values.
+     * @see Arguments#get()
+     */
+    public static Stream<Object> stream(final Arguments arguments) {
+        Objects.requireNonNull(arguments, "arguments is null");
+        return Arrays.stream(arguments.get());
+    }
+
+    public static Stream<Object> payloads(final Arguments arguments) {
+        return stream(arguments).map(JinahyaNamedUtils::payload);
+    }
+
+    /**
+     * Creates a new instance of {@link Arguments} from specified stream's elements.
+     *
+     * @param stream the stream.
+     * @return a new instance of {@link Arguments} with specified stream's elements.
+     */
+    public static Arguments from(final Stream<?> stream) {
+        Objects.requireNonNull(stream, "stream is null");
+        return Arguments.of(stream.toArray());
+    }
+
+    public static Arguments ofPayloadsMapped(final Arguments arguments,
+                                             final IntFunction<? extends Function<Object, Object>> mapper) {
+        Objects.requireNonNull(arguments, "arguments is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        final var got = arguments.get();
+        return from(
+                IntStream.range(0, got.length)
+                        .mapToObj(i -> mapper.apply(i).apply(JinahyaNamedUtils.payload(got[i])))
+        );
+    }
+
+    public static Arguments ofPayloads(final Arguments arguments) {
+        return ofPayloadsMapped(arguments, i -> Function.identity());
     }
 
     // -----------------------------------------------------------------------------------------------------------------
